@@ -1,0 +1,14 @@
+# Path to the folder that contains the source images
+images_path = "src/test_data"
+# Rectangle that is used to calculate the mean color
+# [x-coordinate, y-coordinate, width, height]
+roi = [100, 100, 100, 100]
+font_path = "src/DejaVuSans.ttf"
+font_size = 14
+font_color = [32, 35, 68]
+location = "MC105"
+# [year, month, day]
+start_date = [2018, 3, 4]
+# [year, month, day]
+end_date = [2018, 3, 4]
+duration = 30
