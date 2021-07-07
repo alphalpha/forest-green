@@ -179,9 +179,7 @@ pub fn run(config: Config) -> Result<(), util::Error> {
             continue;
         }
 
-        while (current_date.timestamp() - prev_utc.timestamp()).abs()
-            < (current_date.timestamp() - utc.timestamp()).abs()
-        {
+        while current_date < utc {
             let image = generate_image(&config, &prev_date, &prev_file)?;
             output_file_path(&config.output_path, &prev_file, &current_date)
                 .and_then(|path| image.save(path).map_err(|e| util::Error::Image(e)))?;
