@@ -10,3 +10,4 @@ Cargo.lock
 **/*.rs.bk
 
 src/test_data/Output
+*.swp
