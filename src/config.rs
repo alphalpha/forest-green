@@ -1,5 +1,5 @@
 use crate::{font, locations, util};
-use chrono::{DateTime, Duration, TimeZone, Utc};
+use chrono::{DateTime, Duration, NaiveTime, TimeZone, Utc};
 use confy;
 use image::Rgb;
 use imageproc::rect::Rect;
@@ -18,6 +18,8 @@ pub struct RawConfig {
     pub start_date: [u32; 3],
     pub end_date: [u32; 3],
     pub duration: i64,
+    pub night_times: [u32; 2],
+    pub night_color: [u8; 3],
 }
 
 impl ::std::default::Default for RawConfig {
@@ -32,6 +34,8 @@ impl ::std::default::Default for RawConfig {
             start_date: [0, 0, 0],
             end_date: [0, 0, 0],
             duration: 0,
+            night_times: [0, 0],
+            night_color: [0, 0, 0],
         }
     }
 }
@@ -45,6 +49,9 @@ pub struct Config {
     pub start_date: DateTime<Utc>,
     pub end_date: DateTime<Utc>,
     pub duration: Duration,
+    pub night_start_time: NaiveTime,
+    pub night_end_time: NaiveTime,
+    pub night_color: Rgb<u8>,
 }
 
 impl Config {
@@ -75,6 +82,9 @@ impl Config {
             Rgb(raw_config.font_color),
         );
 
+        let night_start_time = NaiveTime::from_hms(raw_config.night_times[0], 0, 0);
+        let night_end_time = NaiveTime::from_hms(raw_config.night_times[1], 0, 0);
+
         Ok(Config {
             input_path: input_dir,
             output_path: output_dir,
@@ -97,6 +107,9 @@ impl Config {
                 )
                 .and_hms(23, 59, 59),
             duration: Duration::minutes(raw_config.duration),
+            night_start_time,
+            night_end_time,
+            night_color: Rgb(raw_config.night_color),
         })
     }
 }

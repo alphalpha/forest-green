@@ -117,11 +117,11 @@ fn draw_citing(image: &mut RgbImage, config: &Config, position: &Point<u32>, tex
 
 fn generate_image(
     config: &Config,
+    in_image: &mut RgbImage,
     date: &String,
-    file_path: &Path,
 ) -> Result<RgbImage, util::Error> {
-    let mut in_image = image::open(&file_path)?.to_rgb8();
-    let color = crop_image(&mut in_image, &config.roi).and_then(|i| mean_color(&i))?;
+    //let mut in_image = image::open(&file_path)?.to_rgb8();
+    let color = crop_image(in_image, &config.roi).and_then(|i| mean_color(&i))?;
     let dimensions = in_image.dimensions();
     let mut image = image::ImageBuffer::new(2 * dimensions.0, dimensions.1);
 
@@ -151,6 +151,45 @@ fn generate_image(
     Ok(image)
 }
 
+fn generate_night_image(
+    config: &Config,
+    dimensions: (u32, u32),
+    date: &String,
+) -> Result<RgbImage, util::Error> {
+    let mut image = image::ImageBuffer::new(2 * dimensions.0, dimensions.1);
+
+    for (_x, _y, pixel) in image.enumerate_pixels_mut() {
+        *pixel = config.night_color;
+    }
+
+    let mut position = Point {
+        x: config.font.pos.0,
+        y: config.font.pos.1,
+    };
+    let location_date = config.location.clone() + ", " + &date;
+    draw_citing(&mut image, &config, &position, &location_date.as_str());
+
+    let font_height = config.font.scale.y as u32;
+    position.y = config.font.pos.1 + font_height;
+    let title = "Average colour of forest activity";
+    draw_citing(&mut image, &config, &position, title);
+
+    position.y = config.font.pos.1 + 2 * font_height;
+    let color_string = format!("{:?}", config.night_color);
+    draw_citing(&mut image, &config, &position, &color_string.as_str());
+
+    position.x = dimensions.0;
+    position.y = config.font.pos.1;
+    draw_citing(&mut image, &config, &position, &location_date.as_str());
+
+    position.y = config.font.pos.1 + font_height;
+    draw_citing(&mut image, &config, &position, title);
+
+    position.y = config.font.pos.1 + 2 * font_height;
+    draw_citing(&mut image, &config, &position, &color_string.as_str());
+    Ok(image)
+}
+
 fn date_from_file_name(file_path: &Path) -> Result<(DateTime<Utc>, String), util::Error> {
     file_path
         .file_stem()
@@ -164,34 +203,56 @@ pub fn run(config: Config) -> Result<(), util::Error> {
     let mut current_date = config.start_date.clone();
     let mut file_iter = input_paths.iter();
     let mut prev_file = file_iter.next().unwrap();
-    let (mut prev_utc, mut prev_date) = date_from_file_name(&prev_file)?;
+    let (_, mut prev_date) = date_from_file_name(&prev_file)?;
 
     while let Some(file) = file_iter.next() {
         let (utc, date) = date_from_file_name(&file)?;
         if utc > config.end_date {
             break;
         }
-        // Skip outdated images
-        if prev_utc < current_date {
-            prev_utc = utc;
-            prev_date = date;
-            prev_file = file;
-            continue;
-        }
-
-        while current_date < utc {
-            let image = generate_image(&config, &prev_date, &prev_file)?;
+        let mut in_image = image::open(&prev_file)?.to_rgb8();
+        let dimensions = in_image.dimensions();
+        while current_date.time() >= config.night_start_time
+            || current_date.time() <= config.night_end_time
+        {
+            if current_date > config.end_date {
+                break;
+            }
+            let night_date = format!("{}", current_date.format("%d.%m.%Y, %T"));
+            let image = generate_night_image(&config, dimensions, &night_date)?;
             output_file_path(&config.output_path, &prev_file, &current_date)
                 .and_then(|path| image.save(path).map_err(|e| util::Error::Image(e)))?;
             current_date = current_date + config.duration;
         }
-        prev_utc = utc;
+        while current_date < utc {
+            if current_date > config.end_date {
+                break;
+            }
+            let image = generate_image(&config, &mut in_image, &prev_date)?;
+            output_file_path(&config.output_path, &prev_file, &current_date)
+                .and_then(|path| image.save(path).map_err(|e| util::Error::Image(e)))?;
+            current_date = current_date + config.duration;
+        }
         prev_date = date;
         prev_file = file;
     }
 
     while current_date <= config.end_date {
-        let image = generate_image(&config, &prev_date, &prev_file)?;
+        let mut in_image = image::open(&prev_file)?.to_rgb8();
+        let dimensions = in_image.dimensions();
+        while current_date.time() >= config.night_start_time
+            || current_date.time() <= config.night_end_time
+        {
+            if current_date > config.end_date {
+                return Ok(());
+            }
+            let night_date = format!("{}", current_date.format("%d.%m.%Y, %T"));
+            let image = generate_night_image(&config, dimensions, &night_date)?;
+            output_file_path(&config.output_path, &prev_file, &current_date)
+                .and_then(|path| image.save(path).map_err(|e| util::Error::Image(e)))?;
+            current_date = current_date + config.duration;
+        }
+        let image = generate_image(&config, &mut in_image, &prev_date)?;
         output_file_path(&config.output_path, &prev_file, &current_date)
             .and_then(|path| image.save(path).map_err(|e| util::Error::Image(e)))?;
         current_date = current_date + config.duration;
