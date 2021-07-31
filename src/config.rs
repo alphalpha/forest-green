@@ -49,8 +49,7 @@ pub struct Config {
     pub start_date: DateTime<Utc>,
     pub end_date: DateTime<Utc>,
     pub duration: Duration,
-    pub night_start_time: NaiveTime,
-    pub night_end_time: NaiveTime,
+    pub night_times: Option<(NaiveTime, NaiveTime)>,
     pub night_color: Rgb<u8>,
 }
 
@@ -82,8 +81,13 @@ impl Config {
             Rgb(raw_config.font_color),
         );
 
-        let night_start_time = NaiveTime::from_hms(raw_config.night_times[0], 0, 0);
-        let night_end_time = NaiveTime::from_hms(raw_config.night_times[1], 0, 0);
+        let mut night_times = None;
+        if raw_config.night_times[0] != raw_config.night_times[0] {
+            night_times = Some((
+                NaiveTime::from_hms(raw_config.night_times[0], 0, 0),
+                NaiveTime::from_hms(raw_config.night_times[1], 0, 0),
+            ));
+        }
 
         Ok(Config {
             input_path: input_dir,
@@ -107,8 +111,7 @@ impl Config {
                 )
                 .and_hms(23, 59, 59),
             duration: Duration::minutes(raw_config.duration),
-            night_start_time,
-            night_end_time,
+            night_times,
             night_color: Rgb(raw_config.night_color),
         })
     }

@@ -4,7 +4,7 @@ use std::path::Path;
 use std::process;
 
 fn help() -> String {
-    String::from("usage: image-generator [<configuration_file>]\n")
+    String::from("usage: forest-green [<configuration_file>]\n")
 }
 
 fn main() {

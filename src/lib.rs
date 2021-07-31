@@ -231,8 +231,9 @@ pub fn run(config: Config) -> Result<(), util::Error> {
                 }
             }
         }
-        if current_date.time() >= config.night_start_time
-            || current_date.time() < config.night_end_time
+        if config.night_times.is_some()
+            && (current_date.time() >= config.night_times.unwrap().0
+                || current_date.time() < config.night_times.unwrap().1)
         {
             if let Some(i) = in_image {
                 let image = generate_night_image(&config, i.dimensions(), &current_date)?;

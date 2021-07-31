@@ -24,6 +24,7 @@ duration = 30
 
 # sunset and sunrise
 # [hour, hour]
+# If the two values are the same, no night images will be generated
 night_times = [22, 6]
 
 # Color of night image
