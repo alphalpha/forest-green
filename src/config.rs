@@ -20,6 +20,7 @@ pub struct RawConfig {
     pub duration: i64,
     pub night_times: [u32; 2],
     pub night_color: [u8; 3],
+    pub night_duration: i64,
 }
 
 impl ::std::default::Default for RawConfig {
@@ -36,6 +37,7 @@ impl ::std::default::Default for RawConfig {
             duration: 0,
             night_times: [0, 0],
             night_color: [0, 0, 0],
+            night_duration: 0,
         }
     }
 }
@@ -51,6 +53,7 @@ pub struct Config {
     pub duration: Duration,
     pub night_times: Option<(NaiveTime, NaiveTime)>,
     pub night_color: Rgb<u8>,
+    pub night_duration: Duration,
 }
 
 impl Config {
@@ -82,7 +85,7 @@ impl Config {
         );
 
         let mut night_times = None;
-        if raw_config.night_times[0] != raw_config.night_times[0] {
+        if raw_config.night_times[0] != raw_config.night_times[1] {
             night_times = Some((
                 NaiveTime::from_hms(raw_config.night_times[0], 0, 0),
                 NaiveTime::from_hms(raw_config.night_times[1], 0, 0),
@@ -113,6 +116,7 @@ impl Config {
             duration: Duration::minutes(raw_config.duration),
             night_times,
             night_color: Rgb(raw_config.night_color),
+            night_duration: Duration::minutes(raw_config.night_duration),
         })
     }
 }

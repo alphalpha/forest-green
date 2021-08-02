@@ -231,6 +231,7 @@ pub fn run(config: Config) -> Result<(), util::Error> {
                 }
             }
         }
+
         if config.night_times.is_some()
             && (current_date.time() >= config.night_times.unwrap().0
                 || current_date.time() < config.night_times.unwrap().1)
@@ -241,6 +242,7 @@ pub fn run(config: Config) -> Result<(), util::Error> {
                     .and_then(|path| image.save(path).map_err(|e| util::Error::Image(e)))?;
                 in_image = Some(i);
             }
+            current_date = current_date + config.night_duration;
         } else {
             if let Some(mut i) = in_image {
                 let image = generate_image(&config, &mut i, &date)?;
@@ -248,8 +250,8 @@ pub fn run(config: Config) -> Result<(), util::Error> {
                     .and_then(|path| image.save(path).map_err(|e| util::Error::Image(e)))?;
                 in_image = Some(i);
             }
+            current_date = current_date + config.duration;
         }
-        current_date = current_date + config.duration;
     }
     Ok(())
 }

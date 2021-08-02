@@ -30,3 +30,5 @@ night_times = [22, 6]
 # Color of night image
 # [R, G, B]
 night_color = [0, 0, 0]
+
+night_duration = 120
