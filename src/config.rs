@@ -1,4 +1,4 @@
-use crate::{font, locations, util};
+use crate::{font, util};
 use chrono::{DateTime, Duration, NaiveTime, TimeZone, Utc};
 use confy;
 use image::Rgb;
@@ -70,14 +70,6 @@ impl Config {
         let output_dir = input_dir.join(Path::new("Output"));
         fs::create_dir(&output_dir)?;
 
-        let location_map = locations::location_map()?;
-        let location = location_map
-            .get(&raw_config.location)
-            .ok_or(util::Error::Custom(String::from(
-                "Given location info is unknown",
-            )))?
-            .clone();
-
         let font = font::Font::new(
             Path::new(&raw_config.font_path),
             raw_config.font_size,
@@ -98,7 +90,7 @@ impl Config {
             roi: Rect::at(raw_config.roi[0], raw_config.roi[1])
                 .of_size(raw_config.roi[2] as u32, raw_config.roi[3] as u32),
             font: font,
-            location: location,
+            location: raw_config.location,
             start_date: Utc
                 .ymd(
                     raw_config.start_date[0] as i32,

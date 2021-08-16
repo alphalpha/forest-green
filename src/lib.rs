@@ -1,6 +1,5 @@
 pub mod config;
 mod font;
-mod locations;
 mod util;
 
 pub use crate::config::Config;
@@ -120,7 +119,6 @@ fn generate_image(
     in_image: &mut RgbImage,
     date: &String,
 ) -> Result<RgbImage, util::Error> {
-    //let mut in_image = image::open(&file_path)?.to_rgb8();
     let color = crop_image(in_image, &config.roi).and_then(|i| mean_color(&i))?;
     let dimensions = in_image.dimensions();
     let mut image = image::ImageBuffer::new(2 * dimensions.0, dimensions.1);
