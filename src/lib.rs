@@ -4,7 +4,7 @@ mod util;
 
 pub use crate::config::Config;
 pub use crate::util::Error;
-use chrono::{DateTime, TimeZone, Utc};
+use chrono::{DateTime, Duration, TimeZone, Utc};
 use image::{GenericImage, Rgb, RgbImage};
 use imageproc::drawing::{draw_filled_rect_mut, draw_text_mut};
 use imageproc::rect::Rect;
@@ -199,54 +199,58 @@ pub fn run(config: Config) -> Result<(), util::Error> {
     let mut current_date = config.start_date.clone();
     let mut file_iter = input_paths.iter();
     let mut file = file_iter.next().unwrap();
-    let mut next_file = None;
-    let mut next_utc = None;
-    let mut next_date = None;
-    let mut in_image = None;
-    let (mut utc, mut date) = date_from_file_name(&file)?;
+    let (_, mut date) = date_from_file_name(&file)?;
+    let mut night_end = None;
 
     while current_date < config.end_date {
-        if next_file.is_none() {
-            in_image = Some(image::open(&file)?.to_rgb8());
-            if let Some(f) = file_iter.next() {
-                let (u, d) = date_from_file_name(&f)?;
-                next_utc = Some(u);
-                next_file = Some(f);
-                next_date = Some(d);
+        for p in input_paths.iter() {
+            let (u, d) = date_from_file_name(&p)?;
+            if u > current_date {
+                continue;
             }
+            date = d;
+            file = p;
         }
-        if next_utc.is_some() {
-            if next_utc != Some(utc) {
-                if next_utc < Some(current_date) {
-                    if let Some(f) = next_file {
-                        file = f;
-                        utc = next_utc.unwrap();
-                        date = next_date.unwrap();
-                        next_file = None;
-                        next_utc = None;
-                        next_date = None;
-                    }
-                }
-            }
-        }
+        let in_image = Some(image::open(&file)?.to_rgb8());
 
         if config.night_times.is_some()
             && (current_date.time() >= config.night_times.unwrap().0
                 || current_date.time() < config.night_times.unwrap().1)
         {
+            if night_end.is_none() {
+                let now = current_date
+                    .date()
+                    .and_time(config.night_times.unwrap().1)
+                    .unwrap();
+                let next = (current_date + Duration::days(1))
+                    .date()
+                    .and_time(config.night_times.unwrap().1)
+                    .unwrap();
+                if (next - current_date) < Duration::days(1) {
+                    night_end = Some(next);
+                } else {
+                    night_end = Some(now);
+                }
+            }
             if let Some(i) = in_image {
                 let image = generate_night_image(&config, i.dimensions(), &current_date)?;
                 output_file_path(&config.output_path, &file, &current_date)
                     .and_then(|path| image.save(path).map_err(|e| util::Error::Image(e)))?;
-                in_image = Some(i);
             }
-            current_date = current_date + config.night_duration;
+
+            if current_date + config.night_duration > night_end.unwrap() {
+                while current_date < night_end.unwrap() {
+                    current_date = current_date + config.duration;
+                }
+                night_end = None;
+            } else {
+                current_date = current_date + config.night_duration;
+            }
         } else {
             if let Some(mut i) = in_image {
                 let image = generate_image(&config, &mut i, &date)?;
                 output_file_path(&config.output_path, &file, &current_date)
                     .and_then(|path| image.save(path).map_err(|e| util::Error::Image(e)))?;
-                in_image = Some(i);
             }
             current_date = current_date + config.duration;
         }
