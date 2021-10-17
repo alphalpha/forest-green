@@ -54,6 +54,7 @@ pub struct Config {
     pub night_times: Option<(NaiveTime, NaiveTime)>,
     pub night_color: Rgb<u8>,
     pub night_duration: Duration,
+    pub skip_night: bool,
 }
 
 impl Config {
@@ -84,6 +85,12 @@ impl Config {
             ));
         }
 
+        let night_duration = Duration::minutes(raw_config.night_duration);
+        let mut skip_night = false;
+        if night_duration == Duration::minutes(0) {
+            skip_night = true;
+        }
+
         Ok(Config {
             input_path: input_dir,
             output_path: output_dir,
@@ -108,7 +115,8 @@ impl Config {
             duration: Duration::minutes(raw_config.duration),
             night_times,
             night_color: Rgb(raw_config.night_color),
-            night_duration: Duration::minutes(raw_config.night_duration),
+            night_duration,
+            skip_night,
         })
     }
 }

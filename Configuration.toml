@@ -31,4 +31,5 @@ night_times = [22, 6]
 # [R, G, B]
 night_color = [0, 0, 0]
 
+# In minutes. If set to 0, no night images will be generated
 night_duration = 120
