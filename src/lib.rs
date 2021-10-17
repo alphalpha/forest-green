@@ -177,12 +177,6 @@ fn generate_night_image(
     let color_string = format!("{:?}", config.night_color);
     draw_citing(&mut image, &config, &position, &color_string.as_str());
 
-    position.x = dimensions.0;
-    position.y = config.font.pos.1;
-    let date = format!("{}", current_date.format("%Y-%m-%d, %T"));
-    let location_date = config.location.clone() + ", " + &date;
-    draw_citing(&mut image, &config, &position, &location_date.as_str());
-
     Ok(image)
 }
 
